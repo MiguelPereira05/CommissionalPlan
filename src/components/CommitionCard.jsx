@@ -1,10 +1,8 @@
 export default function CommitionCard({
 	title,
-	defaultRatePerFile,
-	rateRulesByMonth,
+	activeRatePerFile,
 	selectedDate,
 	commissions,
-	onDateChange,
 	onIncrement,
 	onDecrement,
 }) {
@@ -15,14 +13,13 @@ export default function CommitionCard({
 		return date.startsWith(selectedMonthKey) ? total + files : total
 	}, 0)
 
-	const monthRules = rateRulesByMonth?.[selectedMonthKey] || []
-	const matchedRule = monthRules.find(
-		(rule) => filesInSelectedMonth >= rule.minFiles && filesInSelectedMonth <= rule.maxFiles,
-	)
-	const activeRatePerFile = matchedRule ? matchedRule.rate : defaultRatePerFile
 	const payout = filesSubmitted * activeRatePerFile
+	const currencyFormatter = new Intl.NumberFormat('en-IE', {
+		style: 'currency',
+		currency: 'EUR',
+	})
 
-	const monthLabel = new Intl.DateTimeFormat('en-US', {
+	const monthLabel = new Intl.DateTimeFormat('en-GB', {
 		month: 'long',
 		year: 'numeric',
 	}).format(new Date(`${selectedMonthKey}-01T00:00:00`))
@@ -36,19 +33,6 @@ export default function CommitionCard({
 				<p className="text-sm text-gray-500">{monthLabel}</p>
 			</header>
 
-			<div className="mb-5">
-				<label htmlFor={`commission-date-${title}`} className="text-sm text-gray-500 block mb-2">
-					Select day
-				</label>
-				<input
-					id={`commission-date-${title}`}
-					type="date"
-					value={selectedDate}
-					onChange={(event) => onDateChange(event.target.value)}
-					className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
-				/>
-			</div>
-
 			<div className="space-y-3 mb-6">
 				<div>
 					<p className="text-sm text-gray-500">Submitted files</p>
@@ -57,18 +41,18 @@ export default function CommitionCard({
 
 				<div>
 					<p className="text-sm text-gray-500">Rate per file</p>
-					<p className="text-lg font-semibold text-gray-700">${activeRatePerFile.toFixed(2)}</p>
+					<p className="text-lg font-semibold text-gray-700">{currencyFormatter.format(activeRatePerFile)}</p>
 				</div>
 
 				<div>
 					<p className="text-sm text-gray-500">Total payout</p>
-					<p className="text-4xl font-bold text-gray-800">${payout.toFixed(2)}</p>
+					<p className="text-4xl font-bold text-gray-800">{currencyFormatter.format(payout)}</p>
 				</div>
 
 				<div>
 					<p className="text-sm text-gray-500">Month total ({monthLabel})</p>
 					<p className="text-lg font-semibold text-gray-700">
-						{filesInSelectedMonth} files · ${monthlyPayout.toFixed(2)}
+						{filesInSelectedMonth} files · {currencyFormatter.format(monthlyPayout)}
 					</p>
 				</div>
 			</div>
