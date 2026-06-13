@@ -5,7 +5,7 @@ export default function Navbar() {
   const { isAuthenticated, user, signOut } = useAuth()
 
   return (
-    <nav className="navbar bg-gray-800 text-white p-4 flex items-center justify-between">
+    <nav className="navbar bg-red-600 text-white p-4 flex items-center justify-between">
       <Link to="/" className="text-2xl font-bold">Commissional Plan</Link>
       <div className="flex items-center gap-2">
         {!isAuthenticated && (
@@ -17,7 +17,7 @@ export default function Navbar() {
 
         {isAuthenticated && (
           <>
-            <span className="hidden md:inline text-sm text-gray-200">{user?.email}</span>
+            <span className="hidden md:inline text-lg text-white">{user?.email}</span>
             <button
               type="button"
               onClick={signOut}

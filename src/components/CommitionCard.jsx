@@ -15,12 +15,12 @@ export default function CommitionCard({
 	}, 0)
 
 	const payout = filesSubmitted * activeRatePerFile
-	const currencyFormatter = new Intl.NumberFormat('en-IE', {
+	const currencyFormatter = new Intl.NumberFormat('pt-PT', {
 		style: 'currency',
 		currency: 'EUR',
 	})
 
-	const monthLabel = new Intl.DateTimeFormat('en-GB', {
+	const monthLabel = new Intl.DateTimeFormat('pt-PT', {
 		month: 'long',
 		year: 'numeric',
 	}).format(new Date(`${selectedMonthKey}-01T00:00:00`))
@@ -36,24 +36,24 @@ export default function CommitionCard({
 
 			<div className="space-y-3 mb-6">
 				<div>
-					<p className="text-sm text-gray-500">Submitted files</p>
+					<p className="text-sm text-gray-500">Processos enviados</p>
 					<p className="text-3xl font-bold text-gray-900">{filesSubmitted}</p>
 				</div>
 
 				<div>
-					<p className="text-sm text-gray-500">Rate per file</p>
+					<p className="text-sm text-gray-500">Taxa por processo</p>
 					<p className="text-lg font-semibold text-gray-700">{currencyFormatter.format(activeRatePerFile)}</p>
 				</div>
 
 				<div>
-					<p className="text-sm text-gray-500">Total payout</p>
+					<p className="text-sm text-gray-500">Pagamento total</p>
 					<p className="text-4xl font-bold text-gray-800">{currencyFormatter.format(payout)}</p>
 				</div>
 
 				<div>
-					<p className="text-sm text-gray-500">Month total ({monthLabel})</p>
+					<p className="text-sm text-gray-500">Total do mês ({monthLabel})</p>
 					<p className="text-lg font-semibold text-gray-700">
-						{filesInSelectedMonth} files · {currencyFormatter.format(monthlyPayout)}
+						{filesInSelectedMonth} processos · {currencyFormatter.format(monthlyPayout)}
 					</p>
 				</div>
 			</div>
@@ -65,7 +65,7 @@ export default function CommitionCard({
 					disabled={!canEdit}
 					className="px-4 py-2 rounded-lg bg-red-100 text-red-700 font-medium hover:bg-red-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
 				>
-					- 1 file
+					- 1 processo
 				</button>
 
 				<button
@@ -74,7 +74,7 @@ export default function CommitionCard({
 					disabled={!canEdit}
 					className="px-4 py-2 rounded-lg bg-green-100 text-green-700 font-medium hover:bg-green-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
 				>
-					+ 1 file
+					+ 1 processo
 				</button>
 			</div>
 		</article>

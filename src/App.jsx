@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Disclamer from './components/Disclamer.jsx'
 import CommitionCard from './components/CommitionCard.jsx'
 import Navbar from './components/Navbar.jsx'
+import Footer from './components/Footer.jsx'
 import { useAuth } from './auth/AuthProvider'
 import { supabase } from './auth/supabaseClient'
 
@@ -403,22 +404,21 @@ function App() {
   return (
     <>
       <Navbar />
-      <main className="app-shell min-h-screen bg-gray-100 p-6 md:p-10">
+      <main className="app-shell min-h-screen bg-gray-300 p-6 md:p-10">
         <section className="max-w-6xl mx-auto">
           <div className="mb-8">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-800">Monthly Commission Organizer</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-800">Organizador de Comissões Mensal</h2>
             <p className="text-gray-600 mt-2">
-              Pick one date for all cards and track submitted files for that day. Payout is calculated
-              automatically using each card rate.
+              Selecione uma data para todos os cartões e acompanhe os arquivos enviados nesse dia. O pagamento é calculado automaticamente usando a taxa de cada cartão.
             </p>
             {!isAuthenticated && (
               <p className="text-sm text-amber-700 mt-2">
-                You are viewing in read-only mode. Log in to edit commissions.
+                Você está em modo de visualização no modo somente leitura. Faça login para editar as comissões.
               </p>
             )}
             <div className="mt-4 max-w-xs">
               <label htmlFor="global-commission-date" className="text-sm text-gray-600 block mb-2">
-                Selected date for all commissions
+                Data selecionada para todas as comissões
               </label>
               <input
                 id="global-commission-date"
@@ -428,12 +428,12 @@ function App() {
                 disabled={!isAuthenticated}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
               />
-              <p className="mt-2 text-sm text-gray-500">Displayed format: {displayedSelectedDate}</p>
+              <p className="mt-2 text-sm text-gray-500">Formato exibido: {displayedSelectedDate}</p>
             </div>
           </div>
 
           <article className="mb-8 rounded-2xl bg-white shadow-md p-6 border border-gray-100">
-            <p className="text-sm text-gray-500">Total Commission ({monthLabel})</p>
+            <p className="text-sm text-gray-500">Comissão Total ({monthLabel})</p>
             <p className="text-4xl font-bold text-gray-900 mt-1">
               {currencyFormatter.format(totalMonthlyCommission)}
             </p>
@@ -456,6 +456,7 @@ function App() {
         </section>
       </main>
       <Disclamer />
+      <Footer />
     </>
   )
 }
