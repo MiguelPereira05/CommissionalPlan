@@ -3,6 +3,7 @@ export default function CommitionCard({
 	activeRatePerFile,
 	selectedDate,
 	commissions,
+	canEdit,
 	onIncrement,
 	onDecrement,
 }) {
@@ -61,7 +62,8 @@ export default function CommitionCard({
 				<button
 					type="button"
 					onClick={onDecrement}
-					className="px-4 py-2 rounded-lg bg-red-100 text-red-700 font-medium hover:bg-red-200 transition"
+					disabled={!canEdit}
+					className="px-4 py-2 rounded-lg bg-red-100 text-red-700 font-medium hover:bg-red-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
 				>
 					- 1 file
 				</button>
@@ -69,7 +71,8 @@ export default function CommitionCard({
 				<button
 					type="button"
 					onClick={onIncrement}
-					className="px-4 py-2 rounded-lg bg-green-100 text-green-700 font-medium hover:bg-green-200 transition"
+					disabled={!canEdit}
+					className="px-4 py-2 rounded-lg bg-green-100 text-green-700 font-medium hover:bg-green-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
 				>
 					+ 1 file
 				</button>
