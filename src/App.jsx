@@ -61,6 +61,78 @@ const getActiveRateForCard = (card, cards, monthKey) => {
   return getRateFromRules(filesInSelectedMonth, monthRules, card.defaultRatePerFile)
 }
 
+const parseCommissionDateKey = (dateKey) => {
+  if (typeof dateKey !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) {
+    return null
+  }
+
+  const [yearText, monthText, dayText] = dateKey.split('-')
+  const year = Number(yearText)
+  const month = Number(monthText)
+  const day = Number(dayText)
+
+  if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) {
+    return null
+  }
+
+  const parsedDate = new Date(Date.UTC(year, month - 1, day))
+  const isValidDate =
+    parsedDate.getUTCFullYear() === year &&
+    parsedDate.getUTCMonth() === month - 1 &&
+    parsedDate.getUTCDate() === day
+
+  if (!isValidDate) {
+    return null
+  }
+
+  return {
+    year,
+    monthIndex: month - 1,
+  }
+}
+
+const aggregateMonthlyCommissionCents = (cards, year) => {
+  const monthlyTotalsCents = new Array(12).fill(0)
+
+  cards.forEach((card) => {
+    Object.entries(card.commissions || {}).forEach(([dateKey, filesRaw]) => {
+      const parsedDate = parseCommissionDateKey(dateKey)
+
+      if (!parsedDate || parsedDate.year !== year) {
+        return
+      }
+
+      const files = Number(filesRaw)
+
+      if (!Number.isFinite(files) || files <= 0) {
+        return
+      }
+
+      const monthKey = `${parsedDate.year}-${String(parsedDate.monthIndex + 1).padStart(2, '0')}`
+      const activeRatePerFile = getActiveRateForCard(card, cards, monthKey)
+
+      if (!Number.isFinite(activeRatePerFile)) {
+        return
+      }
+
+      monthlyTotalsCents[parsedDate.monthIndex] += Math.round(files * activeRatePerFile * 100)
+    })
+  })
+
+  return {
+    monthlyTotalsCents,
+    annualTotalCents: monthlyTotalsCents.reduce((sum, monthTotalCents) => sum + monthTotalCents, 0),
+  }
+}
+
+const monthLabels = Array.from({ length: 12 }, (_, monthIndex) => {
+  const label = new Intl.DateTimeFormat('pt-PT', { month: 'long' }).format(
+    new Date(Date.UTC(2026, monthIndex, 1)),
+  )
+
+  return label.charAt(0).toUpperCase() + label.slice(1)
+})
+
 const initialCards = [
   {
     id: 1,
@@ -279,6 +351,7 @@ function App() {
   const saveTimeoutRef = useRef(null)
   const displayedSelectedDate = formatDateForDisplay(selectedDate)
   const selectedMonthKey = selectedDate.slice(0, 7)
+  const selectedYear = parseCommissionDateKey(selectedDate)?.year || new Date().getFullYear()
   const monthLabel = new Intl.DateTimeFormat('en-GB', {
     month: 'long',
     year: 'numeric',
@@ -287,7 +360,15 @@ function App() {
     style: 'currency',
     currency: 'EUR',
   })
+  const sidebarCurrencyFormatter = new Intl.NumberFormat('pt-PT', {
+    style: 'currency',
+    currency: 'EUR',
+  })
   const userId = useMemo(() => user?.id || null, [user])
+  const { monthlyTotalsCents, annualTotalCents } = useMemo(
+    () => aggregateMonthlyCommissionCents(cards, selectedYear),
+    [cards, selectedYear],
+  )
 
   const totalMonthlyCommission = cards.reduce((total, card) => {
     const filesInSelectedMonth = getFilesInMonth(card.commissions, selectedMonthKey)
@@ -405,53 +486,83 @@ function App() {
     <>
       <Navbar />
       <main className="app-shell min-h-screen bg-gray-300 p-6 md:p-10">
-        <section className="max-w-6xl mx-auto">
-          <div className="mb-8">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-800">Organizador de Comissões Mensal</h2>
-            <p className="text-gray-600 mt-2">
-              Selecione uma data para todos os cartões e acompanhe os arquivos enviados nesse dia. O pagamento é calculado automaticamente usando a taxa de cada cartão.
-            </p>
-            {!isAuthenticated && (
-              <p className="text-sm text-amber-700 mt-2">
-                Você está em modo de visualização no modo somente leitura. Faça login para editar as comissões.
-              </p>
-            )}
-            <div className="mt-4 max-w-xs">
-              <label htmlFor="global-commission-date" className="text-sm text-gray-600 block mb-2">
-                Data selecionada para todas as comissões
-              </label>
-              <input
-                id="global-commission-date"
-                type="date"
-                value={selectedDate}
-                onChange={(event) => setSelectedDate(event.target.value)}
-                disabled={!isAuthenticated}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
-              />
-              <p className="mt-2 text-sm text-gray-500">Formato exibido: {displayedSelectedDate}</p>
+        <section className="max-w-7xl mx-auto">
+          <div className="flex flex-col lg:flex-row lg:items-start gap-6">
+            <aside className="w-full lg:w-80 lg:sticky lg:top-6">
+              <article className="rounded-2xl bg-white shadow-md p-6 border border-gray-100">
+                <h3 className="text-xl font-semibold text-gray-900">Comissões ganhas ({selectedYear})</h3>
+                <p className="text-sm text-gray-500 mt-1">Total ganho por mês com base nos registos guardados.</p>
+                <ul className="mt-4 space-y-2">
+                  {monthLabels.map((monthName, monthIndex) => (
+                    <li
+                      key={monthName}
+                      className="flex items-center justify-between border-b border-gray-100 pb-2 text-sm text-gray-700"
+                    >
+                      <span>{monthName}</span>
+                      <span className="font-semibold text-gray-900">
+                        {sidebarCurrencyFormatter.format(monthlyTotalsCents[monthIndex] / 100)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-4 pt-4 border-t border-gray-200 flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700">Total anual</span>
+                  <span className="text-lg font-bold text-gray-900">
+                    {sidebarCurrencyFormatter.format(annualTotalCents / 100)}
+                  </span>
+                </div>
+              </article>
+            </aside>
+
+            <div className="flex-1 min-w-0">
+              <div className="mb-8">
+                <h2 className="text-3xl md:text-4xl font-bold text-gray-800">Organizador de Comissões Mensal</h2>
+                <p className="text-gray-600 mt-2">
+                  Selecione uma data para todos os cartões e acompanhe os arquivos enviados nesse dia. O pagamento é calculado automaticamente usando a taxa de cada cartão.
+                </p>
+                {!isAuthenticated && (
+                  <p className="text-sm text-amber-700 mt-2">
+                    Você está em modo de visualização no modo somente leitura. Faça login para editar as comissões.
+                  </p>
+                )}
+                <div className="mt-4 max-w-xs">
+                  <label htmlFor="global-commission-date" className="text-sm text-gray-600 block mb-2">
+                    Data selecionada para todas as comissões
+                  </label>
+                  <input
+                    id="global-commission-date"
+                    type="date"
+                    value={selectedDate}
+                    onChange={(event) => setSelectedDate(event.target.value)}
+                    disabled={!isAuthenticated}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                  />
+                  <p className="mt-2 text-sm text-gray-500">Formato exibido: {displayedSelectedDate}</p>
+                </div>
+              </div>
+
+              <article className="mb-8 rounded-2xl bg-white shadow-md p-6 border border-gray-100">
+                <p className="text-sm text-gray-500">Comissão Total ({monthLabel})</p>
+                <p className="text-4xl font-bold text-gray-900 mt-1">
+                  {currencyFormatter.format(totalMonthlyCommission)}
+                </p>
+              </article>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {cards.map((card) => (
+                  <CommitionCard
+                    key={card.id}
+                    title={card.title}
+                    activeRatePerFile={getActiveRateForCard(card, cards, selectedMonthKey)}
+                    selectedDate={selectedDate}
+                    commissions={card.commissions}
+                    canEdit={isAuthenticated}
+                    onIncrement={() => updateSubmittedFiles(card.id, 'increment')}
+                    onDecrement={() => updateSubmittedFiles(card.id, 'decrement')}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
-
-          <article className="mb-8 rounded-2xl bg-white shadow-md p-6 border border-gray-100">
-            <p className="text-sm text-gray-500">Comissão Total ({monthLabel})</p>
-            <p className="text-4xl font-bold text-gray-900 mt-1">
-              {currencyFormatter.format(totalMonthlyCommission)}
-            </p>
-          </article>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {cards.map((card) => (
-              <CommitionCard
-                key={card.id}
-                title={card.title}
-                activeRatePerFile={getActiveRateForCard(card, cards, selectedMonthKey)}
-                selectedDate={selectedDate}
-                commissions={card.commissions}
-                canEdit={isAuthenticated}
-                onIncrement={() => updateSubmittedFiles(card.id, 'increment')}
-                onDecrement={() => updateSubmittedFiles(card.id, 'decrement')}
-              />
-            ))}
           </div>
         </section>
       </main>
